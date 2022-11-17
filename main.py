@@ -32,6 +32,8 @@ def get_exercise(message):
     if message.text == 'Добавить результат':
         bot.send_message(message.chat.id, "Добавить результат", reply_markup=types.ReplyKeyboardRemove())
         msgText =  'Ну давай запишем \n\nСколько раз сделал?'
+        #data = helper.exercises_button()
+        #for data in results:
 
         msg = bot.send_message(message.chat.id, msgText)    
         bot.register_next_step_handler(msg, get_approaches)
