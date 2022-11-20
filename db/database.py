@@ -10,17 +10,16 @@ class BaseModel(Model):
     class Meta:
         database = db
 
-
 class Users(BaseModel):
+    '''Обьявление таблицы пользовтелей'''
     user_id = IntegerField()
     join_date = DateField()
     user_name = CharField(max_length=50)
     visible = BooleanField(default=True)
 
-
 class TypeExercise(BaseModel):
+    '''Обьявление справочника упражнений'''
     name = CharField(max_length=50)
-
 
 class IntermediateTable(BaseModel):
     '''Промежуточная таблица для хранения количества подходов'''
@@ -29,8 +28,8 @@ class IntermediateTable(BaseModel):
     datetime_add = DateField(formats='%Y-%m-%d')
     type_exercise_id = ForeignKeyField(TypeExercise, backref='results', null=True)
 
-
 class Results(BaseModel):
+    '''Обьявление таблицы результатов'''
     user_id = ForeignKeyField(Users, backref='results')
     number_pullups = IntegerField(default=0)
     number_approaches = IntegerField(default=0)
@@ -38,10 +37,11 @@ class Results(BaseModel):
     type_exercise_id = ForeignKeyField(TypeExercise, backref='results', null=True)
 
     class Meta:
-        # проверка чтобы в одно записи количество раз и подходов были в разумной пределе
+        '''Проверка чтобы в одно записи количество раз и подходов были в разумной пределе'''
         constraints = [Check('number_pullups between 0 and 100'), Check('number_approaches between 0 and 100')]
 
 def db_conn():
+    '''Создание таблиц'''
     db.create_tables([Results, TypeExercise, Users, IntermediateTable])
 
 def user_registr(user_id, user_name):
@@ -50,15 +50,23 @@ def user_registr(user_id, user_name):
     user.save()
 
 def user_update(user_id, user_name):
-    '''Изменяет имя пользователя. Желательно использовать в связке с методом `user_exists`'''
-    user = Users.update(user_name=user_name).where(Users.user_id==user_id)
-    user.save()
+    '''Изменение имени пользователя'''
+    Users.update(user_name=user_name).where(Users.user_id==user_id)
 
-def user_exists(user_id):
+def user_exists(user_id) -> bool:
     '''Проверка наличия пользователя в бд. Возвращает `True`, если пользователь есть'''
     is_user = Users.select().where(Users.user_id==user_id)
     return len(is_user) > 0
 
+def getting_a_name(user_id) -> str:
+    '''Получение ника пользователя'''
+    for user in Users.select().where(Users.user_id==user_id):
+        return user.user_name
+
+def getting_exercises() -> dict:
+    '''Получение списка упражнений'''
+    exercise = TypeExercise.select()
+    return exercise
 
 def Insert_number_pullups(user_id, pullups):
     '''Добавление в промежуточную таблицу количество раз'''
