@@ -1,5 +1,5 @@
 #from urllib import response
-from telebot import TeleBot, types
+from telebot import TeleBot
 
 import buttons
 import re
@@ -8,9 +8,12 @@ from config import TOKEN, msgs
 
 #Константы
 update_name = "Ваш ник изменен"
+exercises = []
 
 print("Запуск бота")
 bot = TeleBot(TOKEN)
+
+help.table_exists()
 
 print("Подключение установлено")
 
@@ -18,7 +21,6 @@ print("Подключение установлено")
 def get_start(message):
     '''Запуск бота клиентом'''
     msg = help.user_verification(message.chat.id)
-    help.exercises()
 
     if msg == msgs["registr"]:
         msg = bot.send_message(message.chat.id, msg)    
@@ -27,18 +29,20 @@ def get_start(message):
         user_name = help.user_name(message.chat.id)
         welcome(message, msg, user_name)
 
+@bot.callback_query_handler(func=lambda call: True)
+def callback_query(call):
+    pressed_button = call.data
+
 @bot.message_handler(content_types=["text"])
 def use_menu(message):
     '''Обработка нажатых кнопок'''
     if message.text == "Добавить результат":
         buttons.cancel_the_operation(message, bot)
-        get_exercise(message)
+        buttons.set_button_exercises(message, bot)
+        #get_exercise(message)
 
     if message.text == "Настройки":
         buttons.settings(message, bot)
-
-    if message.text == "Назад":
-        buttons.menu(message, bot)
     
     if message.text == "Рейтинг":
         buttons.rating(message, bot)
@@ -48,6 +52,8 @@ def use_menu(message):
         buttons.cancel_the_operation(message, bot)
         msg = bot.send_message(message.chat.id, msgText)  
         bot.register_next_step_handler(msg, update_user_name)
+    if message.text == "Назад":
+        buttons.menu(message, bot)
 
 def update_user_name(message): 
     '''Изменение имени пользователя'''

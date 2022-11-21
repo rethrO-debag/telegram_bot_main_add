@@ -2,6 +2,7 @@ from telebot.types import InlineKeyboardButton as LineButton, \
     InlineKeyboardMarkup as LineMarkup, \
     ReplyKeyboardMarkup as ReplyMarkup, \
     KeyboardButton as button, ReplyKeyboardRemove as ReplyRemove
+import db.helper as help
 
 def menu(message, bot):
     '''Создание кнопок для меню'''
@@ -12,7 +13,7 @@ def menu(message, bot):
     item_settings = button("Настройки")
     markup_menu.add(item_addresult, item_settings, item_rating)
 
-    bot.send_
+    #bot.send_
 
     bot.send_message(message.chat.id, "Меню",
         reply_markup = markup_menu
@@ -54,20 +55,13 @@ def cancel_the_operation(message, bot):
         reply_markup= markup_cancel
     )
 
-# def build_menu(buttons, n_cols,
-#                header_buttons=None,
-#                footer_buttons=None):
-#     menu = [buttons[i:i + n_cols] for i in range(0, len(buttons), n_cols)]
-#     if header_buttons:
-#         menu.insert(0, [header_buttons])
-#     if footer_buttons:
-#         menu.append([footer_buttons])
-#     return menu
-
-# def set_button_exercises(message):
-#     exercises = help.exercises()
-#     markup = types.InlineKeyboardMarkup()
-#     for name_button in exercises:
-#         button = types.InlineKeyboardButton(text=name_button, callback_data=name_button)
-#         markup.add(button)
-#     bot.send_message(message.chat.id, "Выбрать чат", reply_markup = markup)
+def set_button_exercises(message, bot):
+    '''Генерация кнопок исходя из колличества упражнений'''
+    msg = "Выберете упражнение"
+    exercises = help.exercises()
+    markup = LineMarkup()
+    for name_button in exercises:
+        button = LineButton(text=name_button, callback_data=name_button)
+        markup.add(button)
+    bot.send_message(message.chat.id, msg, reply_markup = markup)
+    return exercises

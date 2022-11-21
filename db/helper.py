@@ -1,6 +1,10 @@
 from config import msgs
 import db.database as db
 
+def table_exists():
+    '''При запуске проверка на существование таблиц в базе данных'''
+    db.db_exists_table
+
 def user_verification(userId)-> str:
     '''Проверка пользователя по базе, если нету то регистрируем'''
     if not db.user_exists(userId):
@@ -24,7 +28,20 @@ def update_user_name(userId, user_name):
 
 def exercises():
     '''Получение списка упражнений'''
+    exercise =[]
     button_exercise = db.getting_exercises()
-    return button_exercise
-    # for button in button_exercise:
-    #     print (button.name)
+    for button in button_exercise:
+        exercise.append(button.name)
+    return exercise
+
+def checking_the_record(user_id, exercises):
+    exercise =[]
+    button_exercise = db.getting_exercises()
+    for button in button_exercise:
+        exercise.append(button.name)
+    return exercise
+
+    result_user = db.checking_the_record_db(user_id, exercises)
+    if not db.checking_the_record_db(user_id):
+        button_exercise1 =[]
+        return 
