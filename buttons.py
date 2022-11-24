@@ -26,8 +26,10 @@ def rating(message, bot):
     item_day = button("День")
     item_month = button("Неделя")
     item_year = button("Месяц")
+    item_cancel = button("Назад")
 
     markup_menu.add(item_day, item_month, item_year)
+    markup_menu.add(item_cancel)
     bot.send_message(message.chat.id, message.text,
         reply_markup = markup_menu
     )

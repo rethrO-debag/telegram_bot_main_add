@@ -3,7 +3,7 @@ import db.database as db
 
 def table_exists():
     '''При запуске проверка на существование таблиц в базе данных'''
-    db.db_exists_table
+    db.db_exists_table()
 
 def user_verification(userId)-> str:
     '''Проверка пользователя по базе, если нету то регистрируем'''
@@ -26,22 +26,25 @@ def update_user_name(userId, user_name):
     '''Изменение имени пользователя'''
     db.user_update(userId, user_name)
 
-def exercises():
-    '''Получение списка упражнений'''
-    exercise =[]
-    button_exercise = db.getting_exercises()
-    for button in button_exercise:
-        exercise.append(button.name)
-    return exercise
+# def exercises():
+#     '''Получение списка упражнений'''
+#     exercise =[]
+#     global button
+#     button_exercise = db.getting_exercises()
+#     for button in button_exercise:
+#         exercise.append(button.name)
+#     return exercise
 
-def checking_the_record(user_id, exercises):
-    exercise =[]
-    button_exercise = db.getting_exercises()
-    for button in button_exercise:
-        exercise.append(button.name)
-    return exercise
+def check_result(user_id):
+    '''Изменение имени пользователя'''
+    if not db.checking_the_record_exercises_db(user_id):
+        db.insert_the_record_exercises_db(user_id)
 
-    result_user = db.checking_the_record_db(user_id, exercises)
-    if not db.checking_the_record_db(user_id):
-        button_exercise1 =[]
-        return 
+def update_number_pullups(user_id, number_pullups):
+    db.results_update_number_pullups_db(user_id, number_pullups)
+
+def update_number_approaches(user_id, number_approaches):
+    db.results_update_number_approaches_db(user_id, number_approaches)
+
+def select_rating(rating):
+    db.select_rating_day()
