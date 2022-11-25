@@ -66,9 +66,9 @@ def use_rating(message):
         number = 1
         result = help.select_rating(day_month_year)
         bot.send_message(message.chat.id, 'Подтягивания')
-        bot.send_message(message.chat.id, 'Место - Имя - Количество повторений - Количество подходов')
+        bot.send_message(message.chat.id, 'Место - Имя - Кол. раз')
         for message_rating in result:
-            rating = '№'+str(number) + ' ' +message_rating.user_id.user_name + ' ' + str(message_rating.number_pullups)+ ' ' + str(message_rating.number_approaches)
+            rating = '№'+str(number) + ' ' +message_rating.user_id.user_name + ' ' + str(message_rating.number_pullups)
             bot.send_message(message.chat.id, rating)
             number+=1
     buttons.menu(message, bot)
