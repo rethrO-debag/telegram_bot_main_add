@@ -62,9 +62,16 @@ def use_menu(message):
 
 def use_rating(message):
     if not message.text == 'Назад':
-        help.select_rating(message.text)
-    else:
-        buttons.menu(message, bot)
+        day_month_year = message.text
+        number = 1
+        result = help.select_rating(day_month_year)
+        bot.send_message(message.chat.id, 'Подтягивания')
+        bot.send_message(message.chat.id, 'Место - Имя - Количество повторений - Количество подходов')
+        for message_rating in result:
+            rating = '№'+str(number) + ' ' +message_rating.user_id.user_name + ' ' + str(message_rating.number_pullups)+ ' ' + str(message_rating.number_approaches)
+            bot.send_message(message.chat.id, rating)
+            number+=1
+    buttons.menu(message, bot)
 
 def update_user_name(message): 
     '''Изменение имени пользователя'''

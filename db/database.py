@@ -6,12 +6,13 @@ db = SqliteDatabase('db/Sport.db', pragmas={
     'journal_mode': 'wal',
     'cache_size': -1024 * 64})
 class BaseModel(Model):
+    id = PrimaryKeyField(unique=True)
+
     class Meta:
         database = db
 
 class Users(BaseModel):
     '''Обьявление таблицы пользовтелей'''
-    user_id = PrimaryKeyField(unique=True)
     telegram_id = IntegerField()
     join_date = DateField()
     user_name = CharField(max_length=50)
@@ -19,27 +20,26 @@ class Users(BaseModel):
     visible = BooleanField(default=True)
 
     class Meta:
-        ORDER_BY = 'user_id'
+        db_table = 'users'
 
 class TypeExercise(BaseModel):
     '''Обьявление справочника упражнений'''
-    name_id = PrimaryKeyField(unique=True)
     name = CharField(max_length=50, unique =True)
 
     class Meta:
-        ORDER_BY = 'name_id'
+        db_table = 'TypeExercise'
 
 class Results(BaseModel):
     '''Обьявление таблицы результатов'''
-    result_id = PrimaryKeyField(unique=True)
-    user_id = ForeignKeyField(Users, to_field='user_id')
+    user_id = ForeignKeyField(Users)
     number_pullups = IntegerField(default=0)
     number_approaches = IntegerField(default=0)
     datetime_add = DateField(formats='%Y-%m-%d')
-    type_exercise_id = ForeignKeyField(TypeExercise, to_field='name_id', null=True)
+    type_exercise_id = ForeignKeyField(TypeExercise)
 
     class Meta:
-        ORDER_BY = 'result_id'
+        db_table = 'results'
+
     # class Meta:
     #     '''Проверка чтобы в одно записи количество раз и подходов были в разумной пределе'''
     #     constraints = [Check('number_pullups between 0 and 100'), Check('number_approaches between 0 and 100')]
@@ -118,19 +118,19 @@ def getting_a_name(user_id) -> str:
 def checking_the_record_exercises_db(user_id):
     '''Проверка на существование записи пользователя с сегодняшней датой'''
     user_id = Users.get(Users.telegram_id == user_id)
-    result = Results.select().where(Results.user_id == user_id.user_id and Results.type_exercise_id == 1 and Results.datetime_add == datetime.now())
+    result = Results.select().where(Results.user_id == user_id.id and Results.type_exercise_id == 1 and Results.datetime_add == datetime.now())
     return result
     
 def insert_the_record_exercises_db(user_id):
     '''Добавление новой записи result'''
     user_id = Users.get(Users.telegram_id == user_id)
-    results = Results(user_id=user_id.user_id, type_exercise_id = 1, datetime_add=datetime.now())
+    results = Results(user_id=user_id.id, type_exercise_id = 1, datetime_add=datetime.now())
     results.save()
 
 def results_update_number_pullups_db(user_id, number):
     '''Обновление результатов по количеству'''
     user_id = Users.get(Users.telegram_id == user_id)
-    results = Results.get(Results.user_id == user_id.user_id and Results.type_exercise_id == 1 and Results.datetime_add == datetime.now())
+    results = Results.get(Results.user_id == user_id.id and Results.type_exercise_id == 1 and Results.datetime_add == datetime.now())
     number_pullups = results.number_pullups + int(number)
 
     results = Results.update(number_pullups=+number_pullups).where(Results.user_id == results.user_id and Results.type_exercise_id == 1 and Results.datetime_add == datetime.now())
@@ -139,19 +139,21 @@ def results_update_number_pullups_db(user_id, number):
 def results_update_number_approaches_db(user_id, number):
     '''Обновление результатов по подходам'''
     user_id = Users.get(Users.telegram_id == user_id)
-    results = Results.get(Results.user_id == user_id.user_id and Results.type_exercise_id == 1 and Results.datetime_add == datetime.now())
+    results = Results.get(Results.user_id == user_id.id and Results.type_exercise_id == 1 and Results.datetime_add == datetime.now())
     number_approaches = results.number_approaches + int(number)
 
     results = Results.update(number_approaches=number_approaches).where(Results.user_id == results.user_id and Results.type_exercise_id == 1 and Results.datetime_add == datetime.now())
     results.execute()
 
 def select_rating_day():
-    #results = Results.select(Users.user_name, TypeExercise.name, Results.number_pullups, Results.number_approaches, Results.datetime_add).join_from(Results, Users, JOIN.NATURAL).join_from(Results, TypeExercise, JOIN.NATURAL)
-    rating = Results.select().join(Users).join(TypeExercise).orderby(Results.number_pullups)
-    print(rating)
+    rating = Results.select().where(Results.datetime_add == datetime.now()).order_by(Results.number_pullups.desc())
+    return rating
+
 
 def select_rating_month():
-    pass
+    rating = Results.select().where(fn.date_part('month', Results.datetime_add) == datetime.now().month).order_by(Results.number_pullups.desc())
+    return rating
 
 def select_rating_year():
-    pass
+    rating = Results.select().where(fn.date_part('year', Results.datetime_add) == datetime.now().year).order_by(Results.number_pullups.desc())
+    return rating

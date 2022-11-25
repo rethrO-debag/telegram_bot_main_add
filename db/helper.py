@@ -47,4 +47,13 @@ def update_number_approaches(user_id, number_approaches):
     db.results_update_number_approaches_db(user_id, number_approaches)
 
 def select_rating(rating):
-    db.select_rating_day()
+    if rating == 'День':
+        result = db.select_rating_day()
+
+    if rating == 'Год':
+        result = db.select_rating_year()
+
+    if rating == 'Месяц':
+        result = db.select_rating_month()
+    
+    return result
