@@ -75,7 +75,7 @@ def user_registr(user_id, user_name):
 
 def user_update(user_id, user_name):
     '''Изменение имени пользователя'''
-    Users.update(user_name=user_name).where(Users.user_id==user_id)
+    Users.update(user_name=user_name).where(Users.telegram_id==user_id)
 
 def user_exists(user_id) -> bool:
     '''Проверка наличия пользователя в бд. Возвращает `True`, если пользователь есть'''
