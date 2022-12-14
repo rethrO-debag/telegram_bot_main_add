@@ -9,12 +9,12 @@ from config import TOKEN, msgs
 #Константы
 update_name = "Ваш ник изменен"
 
-print("Запуск бота")
+print("Запуск бота".encode('utf-8'))
 bot = TeleBot(TOKEN)
 
 help.table_exists()
 
-print("Подключение установлено")
+print("Подключение установлено".encode('utf-8'))
 
 @bot.message_handler(commands=["start"])
 def get_start(message):
@@ -128,6 +128,6 @@ def set_result(message):
     bot.send_message(message.chat.id, msgText)  
     buttons.menu(message, bot)
 
-print("Бот запущен")
+print("Бот запущен".encode('utf-8'))
 
 bot.polling(none_stop=True)
