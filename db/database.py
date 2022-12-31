@@ -1,15 +1,19 @@
 from peewee import *
 from datetime import datetime
+from loguru import logger
 
 # SQLite database using WAL journal mode and 64MB cache.
 db = SqliteDatabase('db/Sport.db', pragmas={
     'journal_mode': 'wal',
     'cache_size': -1024 * 64})
+
+
 class BaseModel(Model):
     id = PrimaryKeyField(unique=True)
 
     class Meta:
         database = db
+
 
 class Users(BaseModel):
     '''Обьявление таблицы пользовтелей'''
@@ -22,12 +26,14 @@ class Users(BaseModel):
     class Meta:
         db_table = 'users'
 
+
 class TypeExercise(BaseModel):
     '''Обьявление справочника упражнений'''
-    name = CharField(max_length=50, unique =True)
+    name = CharField(max_length=50, unique=True)
 
     class Meta:
         db_table = 'TypeExercise'
+
 
 class Results(BaseModel):
     '''Обьявление таблицы результатов'''
@@ -40,120 +46,120 @@ class Results(BaseModel):
     class Meta:
         db_table = 'results'
 
-    # class Meta:
-    #     '''Проверка чтобы в одно записи количество раз и подходов были в разумной пределе'''
-    #     constraints = [Check('number_pullups between 0 and 100'), Check('number_approaches between 0 and 100')]
 
 def db_exists_table():
     '''Проверка таблиц на существование'''
-    db_table_exists_Users()
-    db_table_exists_TypeExercise()
-    db_table_exists_Results()
+    logger.info("Запуск процедуры проверки таблиц в базе данных")
+    db_table_exists()
 
-def db_table_exists_Users():
-    '''Проверка существоваения таблицы User'''
-    result = db.table_exists(Users)
-    if not result:
-        db.create_tables([Users])
 
-def db_table_exists_TypeExercise():
-    '''Проверка существоваения таблицы TypeExercise'''
-    result = db.table_exists(TypeExercise)
-    if not result:
-        db.create_tables([TypeExercise])
+def db_table_exists():
+    tables = [Users, TypeExercise, Results]
+    if not all(table.table_exists() for table in tables):
+        db.create_tables(tables)
+        logger.debug('Таблицы созданы успешно.')
+    else:
+        logger.debug('Таблицы уже существуют.')
 
-def db_table_exists_Results():
-    '''Проверка существоваения таблицы Results'''
-    result = db.table_exists(Results)
-    if not result:
-        db.create_tables([Results])
 
 def user_registr(user_id, user_name):
     '''Добавляет нового пользователя. Желательно использовать в связке с методом `user_exists`'''
-    user = Users(telegram_id=user_id, user_name = user_name, user_role = "user", join_date=datetime.now())
+    user = Users(telegram_id=user_id, user_name=user_name,
+                 user_role="user", join_date=datetime.now())
+    logger.debug("Ввод данных нового пользователя.")
     user.save()
 
-def user_update(user_id, user_name):
+
+def user_update(telegram_id, now_name):
     '''Изменение имени пользователя'''
-    Users.update(user_name=user_name).where(Users.telegram_id==user_id)
+    old_name = Users.get(telegram_id=telegram_id)
+    result = Users.update(user_name=now_name).where(id)
+    logger.info("Изменение имени пользователя: " + str(id) + ". Старое имя: \"" +
+                old_name.user_name + "\" на \"" + str(now_name) + "\"")
+    result.execute()
+
 
 def user_exists(user_id) -> bool:
     '''Проверка наличия пользователя в бд. Возвращает `True`, если пользователь есть'''
-    is_user = Users.select().where(Users.telegram_id==user_id)
+    is_user = Users.select().where(Users.telegram_id == user_id)
     return len(is_user) > 0
+
 
 def getting_a_name(user_id) -> str:
     '''Получение ника пользователя'''
-    user = Users.get(Users.telegram_id==user_id)
+    user = Users.get(Users.telegram_id == user_id)
+    logger.info("Получение ника пользователя: " + str(user_id))
     return user.user_name
 
-# def getting_exercises() -> dict:
-#     '''Получение списка упражнений'''
-#     exercise = TypeExercise.select(TypeExercise)
-#     return exercise
-
-# def insert_one_exercises() -> dict:
-#     '''Получение списка упражнений'''
-#     exercise = TypeExercise(TypeExercise = "Подтягивания")
-#     return exercise
-
-# class Update_results:
-#     def checking_the_record_exercises_db(user_id, exercises):
-#         '''Проверка на существование записи пользователя с вырбранным упражнением и сегодняшним днем'''
-#         result = Results.get(Results.user_id == user_id and Results.type_exercise_id == TypeExercise.get(TypeExercise.name==exercises) and Results.datetime_add == datetime.now())
-#         return result
-    
-#     def insert_the_record_exercises_db(user_id, exercises):
-#         '''Добавление новой записи result'''
-#         results = Results(user_id=user_id, type_exercise_id = TypeExercise.get(TypeExercise.name==exercises), datetime_add=datetime.now())
-#         results.save()
-
-#     def results_update_number_of_times_db(user_id, number_of_times, exercises):
-#         '''Обновление результатов'''
-#         Results.update(number_of_times=+number_of_times).where(Results.user_id == user_id and Results.type_exercise_id == TypeExercise.get(TypeExercise.name==exercises) and Results.datetime_add == datetime.now())
-
-#     def results_update_number_approaches_db(user_id, number_approaches, exercises):
-#         Results.update(number_approaches=+number_approaches).where(Results.user_id == user_id and Results.type_exercise_id == TypeExercise.get(TypeExercise.name==exercises) and Results.datetime_add == datetime.now())
 
 def checking_the_record_exercises_db(user_id):
     '''Проверка на существование записи пользователя с сегодняшней датой'''
     user_id = Users.get(Users.telegram_id == user_id)
-    result = Results.select().where(Results.user_id == user_id.id and Results.type_exercise_id == 1 and Results.datetime_add == datetime.now())
+    result = Results.select().where(Results.user_id == user_id.id and Results.type_exercise_id ==
+                                    1 and Results.datetime_add == datetime.now())
+    logger.debug("Вывод данных")
+
     return result
-    
+
+
 def insert_the_record_exercises_db(user_id):
     '''Добавление новой записи result'''
     user_id = Users.get(Users.telegram_id == user_id)
-    results = Results(user_id=user_id.id, type_exercise_id = 1, datetime_add=datetime.now())
+    results = Results(user_id=user_id.id, type_exercise_id=1,
+                      datetime_add=datetime.now())
+    logger.debug("Ввод данных")
     results.save()
+
 
 def results_update_number_pullups_db(user_id, number):
     '''Обновление результатов по количеству'''
     user_id = Users.get(Users.telegram_id == user_id)
-    results = Results.get(Results.user_id == user_id.id and Results.type_exercise_id == 1 and Results.datetime_add == datetime.now())
+    results = Results.get(Results.user_id == user_id.id and Results.type_exercise_id ==
+                          1 and Results.datetime_add == datetime.now())
     number_pullups = results.number_pullups + int(number)
 
-    results = Results.update(number_pullups=+number_pullups).where(Results.user_id == results.user_id and Results.type_exercise_id == 1 and Results.datetime_add == datetime.now())
+    results = Results.update(number_pullups=+number_pullups).where(Results.user_id ==
+                                                                   results.user_id and Results.type_exercise_id == 1 and Results.datetime_add == datetime.now())
+    logger.debug("Ввод данных")
     results.execute()
+
 
 def results_update_number_approaches_db(user_id, number):
     '''Обновление результатов по подходам'''
-    user_id = Users.get(Users.telegram_id == user_id)
-    results = Results.get(Results.user_id == user_id.id and Results.type_exercise_id == 1 and Results.datetime_add == datetime.now())
-    number_approaches = results.number_approaches + int(number)
+    try:
+        user_id = Users.get(Users.telegram_id == user_id)
+        results = Results.get(Results.user_id == user_id.id and Results.type_exercise_id ==
+                              1 and Results.datetime_add == datetime.now())
+        number_approaches = results.number_approaches + int(number)
 
-    results = Results.update(number_approaches=number_approaches).where(Results.user_id == results.user_id and Results.type_exercise_id == 1 and Results.datetime_add == datetime.now())
-    results.execute()
+        results = Results.update(number_approaches=number_approaches).where(
+            Results.user_id == results.user_id and Results.type_exercise_id == 1 and Results.datetime_add == datetime.now())
+        results.execute()
+        logger.debug("Результаты по подходам обновленны.")
+    finally:
+        logger.error(
+            "Ошибка обновления результатов по подходам. Данные не сохранены!")
+
 
 def select_rating_day():
-    rating = Results.select().where(Results.datetime_add == datetime.now()).order_by(Results.number_pullups.desc())
+    rating = Results.select().where(Results.datetime_add == datetime.now()
+                                    ).order_by(Results.number_pullups.desc())
+    logger.debug("Получение данных за день.")
+
     return rating
 
 
 def select_rating_month():
-    rating = Results.select().where(fn.date_part('month', Results.datetime_add) == datetime.now().month).order_by(Results.number_pullups.desc())
+    rating = Results.select().where(fn.date_part('month', Results.datetime_add) ==
+                                    datetime.now().month).order_by(Results.number_pullups.desc())
+    logger.debug("Получение данных за месяц.")
+
     return rating
 
+
 def select_rating_year():
-    rating = Results.select().where(fn.date_part('year', Results.datetime_add) == datetime.now().year).order_by(Results.number_pullups.desc())
+    rating = Results.select().where(fn.date_part('year', Results.datetime_add) ==
+                                    datetime.now().year).order_by(Results.number_pullups.desc())
+    logger.debug("Получение данных за год.")
+
     return rating

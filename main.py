@@ -1,20 +1,22 @@
-#from urllib import response
+# from urllib import response
 from telebot import TeleBot
+from loguru import logger
 
 import buttons
 import re
 import db.helper as help
 from config import TOKEN, msgs
 
-#Константы
+# Константы
 update_name = "Ваш ник изменен"
 
-print("Запуск бота".encode('utf-8'))
+logger.info("Запуск бота")
 bot = TeleBot(TOKEN)
 
 help.table_exists()
 
-print("Подключение установлено".encode('utf-8'))
+logger.debug("Подключение установлено")
+
 
 @bot.message_handler(commands=["start"])
 def get_start(message):
@@ -22,7 +24,7 @@ def get_start(message):
     msg = help.user_verification(message.chat.id)
 
     if msg == msgs["registr"]:
-        msg = bot.send_message(message.chat.id, msg)    
+        msg = bot.send_message(message.chat.id, msg)
         bot.register_next_step_handler(msg, register)
     else:
         user_name = help.user_name(message.chat.id)
@@ -35,30 +37,32 @@ def get_start(message):
 #     bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="chat")
 #     get_exercise(call.message)
 
+
 @bot.message_handler(content_types=["text"])
 def use_menu(message):
     '''Обработка нажатых кнопок'''
     if message.text == "Добавить результат":
         buttons.cancel_the_operation(message, bot)
-        #buttons.set_button_exercises(message, bot)
+        # buttons.set_button_exercises(message, bot)
         get_exercise(message)
 
     if message.text == "Настройки":
         buttons.settings(message, bot)
-    
+
     if message.text == "Рейтинг":
         buttons.rating(message, bot)
-        msgText ="Выберете промежуток!"
-        msg = bot.send_message(message.chat.id, msgText) 
+        msgText = "Выберете промежуток!"
+        msg = bot.send_message(message.chat.id, msgText)
         bot.register_next_step_handler(msg, use_rating)
 
     if message.text == "Изменить ник":
-        msgText =  "Введите желаемое имя"
+        msgText = "Введите желаемое имя"
         buttons.cancel_the_operation(message, bot)
-        msg = bot.send_message(message.chat.id, msgText)  
+        msg = bot.send_message(message.chat.id, msgText)
         bot.register_next_step_handler(msg, update_user_name)
     if message.text == "Назад":
         buttons.menu(message, bot)
+
 
 def use_rating(message):
     if not message.text == 'Назад':
@@ -68,12 +72,14 @@ def use_rating(message):
         bot.send_message(message.chat.id, 'Подтягивания')
         bot.send_message(message.chat.id, 'Место - Имя - Кол. раз')
         for message_rating in result:
-            rating = '№'+str(number) + ' ' +message_rating.user_id.user_name + ' ' + str(message_rating.number_pullups)
+            rating = '№'+str(number) + ' ' + message_rating.user_id.user_name + \
+                ' ' + str(message_rating.number_pullups)
             bot.send_message(message.chat.id, rating)
-            number+=1
+            number += 1
     buttons.menu(message, bot)
 
-def update_user_name(message): 
+
+def update_user_name(message):
     '''Изменение имени пользователя'''
     if message.text != "Назад":
         help.update_user_name(message.chat.id, message.text)
@@ -81,10 +87,12 @@ def update_user_name(message):
     else:
         use_menu(message)
 
+
 def register(message):
     '''Регистрация нового пользователя'''
     msg = help.user_register(message.chat.id, message.text)
     welcome(message, msg, message.text)
+
 
 def welcome(message, msg, user_name):
     '''Приветствие пользователя'''
@@ -96,16 +104,18 @@ def welcome(message, msg, user_name):
 
     buttons.menu(message, bot)
 
+
 def get_exercise(message):
     '''Внесение результата пользователя'''
     help.check_result(message.chat.id)
-    msgText =  "Ну давай запишем \nСколько раз сделал?"
-    msg = bot.send_message(message.chat.id, msgText)  
+    msgText = "Ну давай запишем \nСколько раз сделал?"
+    msg = bot.send_message(message.chat.id, msgText)
     bot.register_next_step_handler(msg, get_approaches)
+
 
 def get_approaches(message):
     '''Обработка внесеного пользователем результата'''
-    if bool(re.match("^[0-9 ]", message.text)): 
+    if bool(re.match("^[0-9 ]", message.text)):
         help.update_number_pullups(message.chat.id, message.text)
         if int(message.text) > 20:
             msgText = "Ништяк!!!"
@@ -119,15 +129,17 @@ def get_approaches(message):
     else:
         use_menu(message)
 
+
 def set_result(message):
     '''Сохранение результата'''
     help.update_number_approaches(message.chat.id, message.text)
 
     msgText = "Я записал твои результаты на текущую дату, до следующего раза, Мужчина!"
 
-    bot.send_message(message.chat.id, msgText)  
+    bot.send_message(message.chat.id, msgText)
     buttons.menu(message, bot)
 
-print("Бот запущен".encode('utf-8'))
+
+logger.debug("Бот запущен")
 
 bot.polling(none_stop=True)
